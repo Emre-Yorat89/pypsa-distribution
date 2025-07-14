@@ -54,6 +54,11 @@ def extract_points(microgrid_shape_path, buildings_path, output_path):
         result = gpd.GeoDataFrame(
             pd.concat([result, buildings_in_microgrid], ignore_index=True)
         )
+    # Calculate building outline areas as m^2 and add it to the dataframe
+    result = result.to_crs(epsg=3034)
+    result["area"] = np.nan
+    result["area"] = result.area
+    result = result.to_crs(epsg=4326)  
     # Save the final result as a GeoJSON file
     result.to_file(output_path, driver="GeoJSON")
 
