@@ -124,6 +124,18 @@ tech_modelling:
   conv_techs: ["diesel"]
   load_carriers: ["AC load"]
 
+grid_coords:
+  lon: 7.6
+  lat: 4.4
+
+grid_conn: #This dictionary represents the buses which the grid is connected to.
+  buses: ["microgrid_1_bus0","microgrid_2_bus2","microgrid_3_bus3"] # Select buses after they are created
+
+connected_microgrids:
+  microgrid_1_bus_0: "microgrid_2_bus_1"
+  microgrid_3_bus_1: "microgrid_1_bus_0"
+  microgrid_2_bus_0: "microgrid_3_bus_0"
+
 microgrids_list:  # MICROGRIDS IN NIGERIA
   microgrid_1:     # WORKING
     lon_max: 7.3914
