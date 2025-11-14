@@ -129,7 +129,7 @@ grid_coords:
   lat: 4.4
 
 grid_conn: #This dictionary represents the buses which the grid is connected to.
-  buses: ["microgrid_1_bus0","microgrid_2_bus2","microgrid_3_bus3"] # Select buses after they are created
+  buses: ["microgrid_1_bus_0","microgrid_2_bus_2","microgrid_3_bus_3"] # Select buses after they are created
 
 connected_microgrids:
   microgrid_1_bus_0: "microgrid_2_bus_1"
