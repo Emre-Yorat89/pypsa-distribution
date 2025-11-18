@@ -89,7 +89,25 @@ def create_microgrid_network(
     data = gpd.read_file(input_file)
     load = pd.read_csv(input_path)
     bus_coords = set()  # Keep track of bus coordinates to avoid duplicates
-
+    if include_grid == True:
+        grid_name = "grid"
+        x_grid = snakemake.config["grid_coords"]["lon"]
+        y_grid = snakemake.config["grid_coords"]["lat"]
+        n.add(
+            "Bus",
+            grid_name,
+            x=x_grid,
+            y=y_grid,
+            v_nom=voltage_level,
+        )
+        n.add(
+            "Generator",
+            "gen_grid",
+            bus=grid_name,
+            p_nom=2000,
+            marginal_cost=10,
+            marginal_cost_quadratic=0.005,
+        )
     for grid_name, grid_data in microgrid_list.items():
         # List to store bus names and their positions for triangulation
         microgrid_buses = []
@@ -100,16 +118,16 @@ def create_microgrid_network(
         load_data = load[[col for col in load.columns if grid_name in col]]
         x_gen_bus, y_gen_bus = calculate_power_node_position(load_data, grid_data)
         gen_bus_name = f"{grid_name}_gen_bus"
-        n.add(
-            "Bus",
-            gen_bus_name,
-            x=x_gen_bus,
-            y=y_gen_bus,
-            v_nom=voltage_level,
-            sub_network=grid_name,
-        )
-        microgrid_buses.append(gen_bus_name)
-        bus_positions.append((x_gen_bus, y_gen_bus))
+        #n.add(
+            #"Bus",
+            #gen_bus_name,
+            #x=x_gen_bus,
+            #y=y_gen_bus,
+            #v_nom=voltage_level,
+            #sub_network=grid_name,
+        #)
+        #microgrid_buses.append(gen_bus_name)
+        #bus_positions.append((x_gen_bus, y_gen_bus))
 
         # Create a SubNetwork for the current microgrid if it does not exist
         if grid_name not in n.sub_networks.index:
@@ -185,6 +203,42 @@ def create_microgrid_network(
         n.import_components_from_dataframe(df, "Line")
 
     df = pd.DataFrame()
+    connected_buses_of_microgrids = snakemake.config["connected_microgrids"]
+    if manual_interconnect_microgrids == True and connected_buses_of_microgrids is not None:
+        for each in connected_buses_of_microgrids.keys():
+            bus0 = each
+            bus1 = connected_buses_of_microgrids[each]
+            line_name = f"{grid_name}_line_{bus0}_{bus1}"
+            # Retrieve the coordinates of the buses
+            x1, y1 = n.buses.loc[bus0].x, n.buses.loc[bus0].y
+            x2, y2 = n.buses.loc[bus1].x, n.buses.loc[bus1].y
+            bus0_coord = Point(x1, y1)
+            bus1_coord = Point(x2, y2)
+            print("bus0 coord:", bus0_coord)
+            # Create a GeoSeries with a defined CRS (WGS84 - EPSG:4326)
+            gdf = gpd.GeoSeries([bus0_coord, bus1_coord], crs="EPSG:4326")
+            # Convert to a projected CRS (e.g., EPSG:3857 for meters)
+            gdf_proj = gdf.to_crs(epsg=3857)
+            # Calculate distance (in kilometers)
+            distance_km = gdf_proj[0].distance(gdf_proj[1]) / 1000
+            df_aux = pd.DataFrame(
+                {
+                    "line_name": [line_name],
+                    "bus0": [bus0],
+                    "bus1": [bus1],
+                    "type": line_type,
+                    "s_nom": [0.1],
+                    "s_nom_extendable": True,
+                    "length": [distance_km],
+                }
+            )
+            df = pd.concat([df, df_aux])
+
+        df.index = df["line_name"]
+        df.drop("line_name", axis=1, inplace=True)
+        n.import_components_from_dataframe(df, "Line")
+    
+    df = pd.DataFrame()
     if interconnect_microgrids == True:
         if len(microgrid_list.keys()) >= 2:
             bus_positions = []
@@ -245,7 +299,42 @@ def create_microgrid_network(
             df.drop("line_name", axis=1, inplace=True)
             n.import_components_from_dataframe(df, "Line")
 
+    #df = pd.DataFrame()
+    #if grid_connections["buses"] is not None and len(grid_connections["buses"]) != 0:
+        #for each in grid_connections["buses"]:
+            #print("hello", each)
+            #bus0 = each
+            #bus1 = "grid"
+            #line_name = f"grid_line_to_{bus0}"
+            # Retrieve the coordinates of the buses
+            #x1, y1 = n.buses.loc[bus0].x, n.buses.loc[bus0].y
+            #x2, y2 = n.buses.loc[bus1].x, n.buses.loc[bus1].y
+            #bus0_coord = Point(x1, y1)
+            #bus1_coord = Point(x2, y2)
+            #print("bus0 coord:", bus0_coord)
+            # Create a GeoSeries with a defined CRS (WGS84 - EPSG:4326)
+            #gdf = gpd.GeoSeries([bus0_coord, bus1_coord], crs="EPSG:4326")
+            # Convert to a projected CRS (e.g., EPSG:3857 for meters)
+            #gdf_proj = gdf.to_crs(epsg=3857)
+            # Calculate distance (in kilometers)
+            #distance_km = gdf_proj[0].distance(gdf_proj[1]) / 1000
+            #df_aux = pd.DataFrame(
+                #{
+                    #"line_name": [line_name],
+                    #"bus0": [bus0],
+                    #"bus1": [bus1],
+                    #"type": line_type,
+                    #"s_nom": [0.1],
+                    #"s_nom_extendable": True,
+                    #"length": [distance_km],
+                #}
+            #)
+            #df = pd.concat([df, df_aux])
 
+        #df.index = df["line_name"]
+        #df.drop("line_name", axis=1, inplace=True)
+        #n.import_components_from_dataframe(df, "Line")
+        
 # def add_bus_at_center(n, number_microgrids, voltage_level, line_type):
 #     """
 #     Adds a new bus to each network at the center of the existing buses.
@@ -350,6 +439,9 @@ if __name__ == "__main__":
         snakemake.config["enable"]["interconnect_microgrids"],
         microgrids_list,
         snakemake.input["load"],
+        snakemake.config["enable"]["include_grid"],
+        snakemake.config["enable"]["manual_interconnect_microgrids"],
+        snakemake.config["grid_conn"],
     )
     a = 12
     n.export_to_netcdf(snakemake.output[0])
