@@ -26,6 +26,8 @@ enable:
   build_cutout: false
   build_natura_raster: false  # If True, then build_natura_raster can be run
   interconnect_microgrids: false
+  manual_interconnect_microgrids: true
+  include_grid: false
 
 scenario:
   simpl: ['']
@@ -124,6 +126,18 @@ tech_modelling:
   storage_techs: ["lithium", "lead acid"]
   conv_techs: ["diesel"]
   load_carriers: ["AC load"]
+
+grid_coords:
+  lon: 7.6
+  lat: 4.4
+
+grid_conn: #This dictionary represents the buses which the grid is connected to.
+  buses: ["microgrid_1_bus_0"] # Select buses after they are created
+
+connected_microgrids:
+  #microgrid_1_bus_0: "microgrid_2_bus_1"
+  #microgrid_3_bus_1: "microgrid_1_bus_0"
+  #microgrid_2_bus_0: "microgrid_3_bus_0"
 
 microgrids_list:  # MICROGRIDS IN NIGERIA
   microgrid_1:     # WORKING
