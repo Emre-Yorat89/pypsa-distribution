@@ -87,3 +87,5 @@ dependencies:
   - chaospy  # lastest version only available on pip
   - fake_useragent
   - numpy<=1.26.4
+  - currencyconverter
+  - googledrivedownloader>=1.1
