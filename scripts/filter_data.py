@@ -192,6 +192,16 @@ def mark_external_buses(n, lines_path, shape_path):
 
     return n
 
+def drop_bus_coords(n):
+    """
+    drop bus names causing the issue in consistency check in pypsa in this case they are bus_coords columns.
+    """
+    n.lines.drop(columns=["bus_0_coors", "bus_1_coors"], inplace=True)
+    n.lines.drop(columns=["bus0_lon", "bus0_lat"], inplace=True)
+    n.lines.drop(columns=["bus1_lon", "bus1_lat"], inplace=True)
+
+    return n
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -217,6 +227,8 @@ if __name__ == "__main__":
             rename_profile_buses(path, microgrid_name)
     # Mark external buses
     n = mark_external_buses(n, snakemake.input["raw_lines"], snakemake.input["shape"])
+    # Drop columns which are bus_coords
+    n = drop_bus_coords(n)
     # Save final updated network
     n.export_to_netcdf(snakemake.output["base_update"])
     logger.info(f"Saved updated network to {snakemake.output['base_update']}")
