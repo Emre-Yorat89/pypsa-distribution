@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import os
-
-import geopandas as gpd
-import pandas as pd
-from _helpers_dist import configure_logging, save_to_geojson, sets_path_to_root
+from _helpers_dist import sets_path_to_root
 from shapely.geometry import Polygon
 
 _logger = logging.getLogger(__name__)
@@ -130,13 +126,7 @@ def create_bus_regions(microgrids_list, output_path, country_code):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers_dist import mock_snakemake
 
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        snakemake = mock_snakemake("build_shapes")
-        sets_path_to_root("pypsa-distribution")
-
-    configure_logging(snakemake)
     country_code = snakemake.params["countries"]
 
     create_microgrid_shapes(
