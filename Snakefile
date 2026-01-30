@@ -82,7 +82,7 @@ if config.get("disable_subworkflow", False):
 #         shell("snakemake -j 1 solve_network --delete-all-output")
 
 
-rule ramp_build_demand_profile:
+rule dist_ramp_build_demand_profile:
     params:
         ramp=config["ramp"],
         snapshoots=config["snapshots"],
@@ -102,7 +102,7 @@ rule ramp_build_demand_profile:
         "scripts/ramp_build_demand_profile.py"
 
 
-rule build_demand:
+rule dist_build_demand:
     params:
         tier=config["tier"],
         snapshots=config["snapshots"],
@@ -129,7 +129,7 @@ rule build_demand:
         "scripts/build_demand.py"
 
 
-rule build_shapes:
+rule dist_build_shapes:
     params:
         countries=config["countries"],
     output:
@@ -148,7 +148,7 @@ rule build_shapes:
 
 if config.get("mode") != "brown_field":
 
-    rule cluster_buildings:
+    rule dist_cluster_buildings:
         params:
             crs=config["crs"],
             house_area_limit=config["house_area_limit"],
@@ -168,7 +168,7 @@ if config.get("mode") != "brown_field":
         script:
             "scripts/cluster_buildings.py"
 
-    rule create_network:
+    rule dist_create_network:
         input:
             clusters="resources/buildings/clustered_buildings.geojson",
             load="resources/demand/microgrid_load.csv",
@@ -187,7 +187,7 @@ if config.get("mode") != "brown_field":
 
 if config["enable"].get("download_osm_buildings", True):
 
-    rule download_osm_data:
+    rule dist_download_osm_data:
         output:
             buildings_resources="resources/"
             + RDIR
@@ -212,7 +212,7 @@ if config["enable"].get("download_osm_buildings", True):
             "scripts/download_osm_data.py"
 
 
-rule clean_earth_osm_data:
+rule dist_clean_earth_osm_data:
     input:
         all_buildings="resources/" + RDIR + "osm/raw/all_raw_buildings.geojson",
         microgrid_shapes="resources/shapes/microgrid_shapes.geojson",
@@ -255,7 +255,7 @@ if config.get("mode") == "brown_field":
         script:
             pypsaearth("scripts/clean_osm_data.py")
 
-    rule build_osm_network:
+    rule dist_build_osm_network:
         params:
             build_osm_network=config.get("build_osm_network", {}),
             countries=config["countries"],
@@ -281,7 +281,7 @@ if config.get("mode") == "brown_field":
         script:
             "scripts/build_osm_network.py"
 
-    rule cluster_buildings:
+    rule dist_cluster_buildings:
         params:
             crs=config["crs"],
             house_area_limit=config["house_area_limit"],
@@ -367,7 +367,7 @@ if config.get("mode") == "brown_field":
         script:
             pypsaearth("scripts/build_bus_regions.py")
 
-    rule filter_data:
+    rule dist_filter_data:
         input:
             **{
                 f"profile_{tech}": f"resources/renewable_profiles/profile_{tech}.nc"
@@ -433,7 +433,7 @@ rule build_renewable_profiles:
         pypsaearth("scripts/build_renewable_profiles.py")
 
 
-rule add_electricity:
+rule dist_add_electricity:
     params:
         mode=config["mode"],
     input:
@@ -480,7 +480,7 @@ rule add_electricity:
 #         "scripts/solve_network.py"
 
 
-rule solve_network:
+rule dist_solve_network:
     input:
         "networks/elec.nc",
     output:
