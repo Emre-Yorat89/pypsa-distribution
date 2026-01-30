@@ -99,7 +99,7 @@ rule dist_ramp_build_demand_profile:
     resources:
         mem_mb=3000,
     script:
-        "scripts/ramp_build_demand_profile.py"
+        "scripts/dist_ramp_build_demand_profile.py"
 
 
 rule dist_build_demand:
@@ -126,7 +126,7 @@ rule dist_build_demand:
     resources:
         mem_mb=3000,
     script:
-        "scripts/build_demand.py"
+        "scripts/dist_build_demand.py"
 
 
 rule dist_build_shapes:
@@ -143,7 +143,7 @@ rule dist_build_shapes:
     resources:
         mem_mb=3000,
     script:
-        "scripts/build_shapes.py"
+        "scripts/dist_build_shapes.py"
 
 
 if config.get("mode") != "brown_field":
@@ -166,7 +166,7 @@ if config.get("mode") != "brown_field":
         resources:
             mem_mb=3000,
         script:
-            "scripts/cluster_buildings.py"
+            "scripts/dist_cluster_buildings.py"
 
     rule dist_create_network:
         input:
@@ -182,7 +182,7 @@ if config.get("mode") != "brown_field":
         resources:
             mem_mb=3000,
         script:
-            "scripts/create_network.py"
+            "scripts/dist_create_network.py"
 
 
 if config["enable"].get("download_osm_buildings", True):
@@ -209,7 +209,7 @@ if config["enable"].get("download_osm_buildings", True):
         resources:
             mem_mb=3000,
         script:
-            "scripts/download_osm_data.py"
+            "scripts/dist_download_osm_data.py"
 
 
 rule dist_clean_earth_osm_data:
@@ -226,7 +226,7 @@ rule dist_clean_earth_osm_data:
     resources:
         mem_mb=3000,
     script:
-        "scripts/clean_earth_osm_data.py"
+        "scripts/dist_clean_earth_osm_data.py"
 
 
 if config.get("mode") == "brown_field":
@@ -253,7 +253,7 @@ if config.get("mode") == "brown_field":
         benchmark:
             "benchmarks/" + RDIR + "clean_osm_data"
         script:
-            pypsaearth("scripts/clean_osm_data.py")
+            "scripts/clean_osm_data.py"
 
     rule dist_build_osm_network:
         params:
@@ -279,7 +279,7 @@ if config.get("mode") == "brown_field":
         benchmark:
             "benchmarks/" + RDIR + "build_osm_network"
         script:
-            "scripts/build_osm_network.py"
+            "scripts/dist_build_osm_network.py"
 
     rule dist_cluster_buildings:
         params:
@@ -303,7 +303,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=3000,
         script:
-            "scripts/cluster_buildings.py"
+            "scripts/dist_cluster_buildings.py"
 
     rule base_network:
         params:
@@ -336,7 +336,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=500,
         script:
-            pypsaearth("scripts/base_network.py")
+            "scripts/base_network.py"
 
     rule build_bus_regions:
         params:
@@ -365,7 +365,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=1000,
         script:
-            pypsaearth("scripts/build_bus_regions.py")
+            "scripts/build_bus_regions.py"
 
     rule dist_filter_data:
         input:
@@ -386,7 +386,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=500,
         script:
-            "scripts/filter_data.py"
+            "scripts/dist_filter_data.py"
 
 
 rule build_renewable_profiles:
@@ -430,7 +430,7 @@ rule build_renewable_profiles:
     resources:
         mem_mb=ATLITE_NPROCESSES * 5000,
     script:
-        pypsaearth("scripts/build_renewable_profiles.py")
+        "scripts/build_renewable_profiles.py"
 
 
 rule dist_add_electricity:
@@ -459,7 +459,7 @@ rule dist_add_electricity:
     resources:
         mem_mb=3000,
     script:
-        "scripts/add_electricity.py"
+        "scripts/dist_add_electricity.py"
 
 
 # if config["monte_carlo"]["options"].get("add_to_snakefile", False) == False:
@@ -477,7 +477,7 @@ rule dist_add_electricity:
 #     resources:
 #         mem_mb=3000,
 #     script:
-#         "scripts/solve_network.py"
+#         "scripts/dist_solve_network.py"
 
 
 rule dist_solve_network:
@@ -493,4 +493,4 @@ rule dist_solve_network:
     resources:
         mem_mb=3000,
     script:
-        "scripts/solve_network.py"
+        "scripts/dist_solve_network.py"
