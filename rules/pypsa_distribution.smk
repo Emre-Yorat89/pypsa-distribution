@@ -3,7 +3,7 @@ from retrieve_databundle_light import (
     get_best_bundles_in_snakemake,
 )
 
-COSTS = "data/costs_dist.csv"
+COSTS = "data/costs.csv"
 PROFILE = "data/dist_data/sample_profile.csv"
 
 configfile: "pypsa-earth/configs/bundle_config.yaml"
