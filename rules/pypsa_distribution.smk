@@ -6,6 +6,8 @@ from retrieve_databundle_light import (
 COSTS = "data/costs_dist.csv"
 PROFILE = "data/dist_data/sample_profile.csv"
 
+configfile: "pypsa-earth/configs/bundle_config.yaml"
+
 rule dist_ramp_build_demand_profile:
     params:
         ramp=config["ramp"],
