@@ -455,7 +455,7 @@ if config["enable"].get("build_natura_raster", False):
         input:
             shapefiles_land="data/landcover",
             cutouts=expand(
-                "cutouts/" + CDIR + "{cutout}.nc",
+                "cutouts/" + "{cutout}.nc",
                 cutout=[c["cutout"] for _, c in config["renewable"].items()],
             ),
             country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
