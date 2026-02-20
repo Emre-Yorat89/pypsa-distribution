@@ -401,7 +401,6 @@ rule dist_add_electricity:
 #     script:
 #         "scripts/solve_network.py"
 
-
 rule dist_solve_network:
     input:
         "networks/elec.nc",
@@ -416,3 +415,32 @@ rule dist_solve_network:
         mem_mb=3000,
     script:
         "../scripts/dist_solve_network.py"
+
+rule build_shapes:
+    params:
+        build_shape_options=config["build_shape_options"],
+        crs=config["crs"],
+        countries=config["countries"],
+        subregion=config["subregion"],
+    input:
+        # naturalearth='data/bundle/naturalearth/ne_10m_admin_0_countries.shp',
+        # eez='data/bundle/eez/World_EEZ_v8_2014.shp',
+        # nuts3='data/bundle/NUTS_2013_60M_SH/data/NUTS_RG_60M_2013.shp',
+        # nuts3pop='data/bundle/nama_10r_3popgdp.tsv.gz',
+        # nuts3gdp='data/bundle/nama_10r_3gdp.tsv.gz',
+        eez="data/eez/eez_v11.gpkg",
+    output:
+        country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
+        offshore_shapes="resources/" + RDIR + "shapes/offshore_shapes.geojson",
+        africa_shape="resources/" + RDIR + "shapes/africa_shape.geojson",
+        gadm_shapes="resources/" + RDIR + "shapes/gadm_shapes.geojson",
+        subregion_shapes="resources/" + RDIR + "shapes/subregion_shapes.geojson",
+    log:
+        "logs/" + RDIR + "build_shapes.log",
+    benchmark:
+        "benchmarks/" + RDIR + "build_shapes"
+    threads: 1
+    resources:
+        mem_mb=3096,
+    script:
+        "scripts/build_shapes.py"
