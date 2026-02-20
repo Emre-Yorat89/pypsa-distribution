@@ -416,6 +416,26 @@ rule dist_solve_network:
     script:
         "../scripts/dist_solve_network.py"
 
+if config["enable"].get("retrieve_databundle", True):
+
+    bundles_to_download = get_best_bundles_in_snakemake(config)
+
+    rule retrieve_databundle_light:
+        params:
+            bundles_to_download=bundles_to_download,
+            hydrobasins_level=config["renewable"]["hydro"]["hydrobasins_level"],
+        output:  #expand(directory('{file}') if isdir('{file}') else '{file}', file=datafiles)
+            expand(
+                "{file}", file=datafiles_retrivedatabundle(config, bundles_to_download)
+            ),
+            directory("data/landcover"),
+        log:
+            "logs/" + RDIR + "retrieve_databundle.log",
+        benchmark:
+            "benchmarks/" + RDIR + "retrieve_databundle_light"
+        script:
+            "../pypsa-earth/scripts/retrieve_databundle_light.py"
+
 rule build_shapes:
     params:
         build_shape_options=config["build_shape_options"],
