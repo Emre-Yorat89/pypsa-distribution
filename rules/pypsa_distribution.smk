@@ -3,9 +3,28 @@ from retrieve_databundle_light import (
     get_best_bundles_in_snakemake,
 )
 
+PYPSAEARTH_FOLDER = "../pypsa-distribution/pypsa-earth"
+
+if not config.get("disable_subworkflow", False):
+
+    subworkflow pypsaearth:
+        workdir:
+            PYPSAEARTH_FOLDER
+        snakefile:
+            PYPSAEARTH_FOLDER + "/Snakefile"
+        configfile:
+            "config.pypsa-earth.yaml"
+
+
+if config.get("disable_subworkflow", False):
+
+    def pypsaearth(path):
+        return PYPSAEARTH_FOLDER + "/" + path
+
+
 COSTS = "data/costs.csv"
 PROFILE = "data/dist_data/sample_profile.csv"
-
+configfile: "config.pypsa-earth.yaml"
 configfile: "pypsa-earth/configs/bundle_config.yaml"
 
 rule dist_ramp_build_demand_profile:
@@ -167,7 +186,7 @@ if config.get("mode") == "brown_field":
             lines="resources/" + RDIR + "osm/raw/all_raw_lines.geojson",
             substations="resources/" + RDIR + "osm/raw/all_raw_substations.geojson",
             country_shapes="resources/shapes/microgrid_shapes.geojson",
-            offshore_shapes="resources/shapes/offshore_shapes.geojson",
+            offshore_shapes=pypsaearth("resources/shapes/offshore_shapes.geojson"),
             africa_shape="../resources/shapes/africa_shape.geojson",
         output:
             generators="resources/" + RDIR + "osm/clean/all_clean_generators.geojson",
@@ -251,7 +270,7 @@ if config.get("mode") == "brown_field":
             + RDIR
             + "base_network/all_transformers_build_network.csv",
             country_shapes="resources/shapes/microgrid_shapes.geojson",
-            offshore_shapes="resources/shapes/offshore_shapes.geojson",
+            offshore_shapes=pypsaearth("resources/shapes/offshore_shapes.geojson"),
         output:
             "networks/" + RDIR + "base.nc",
         log:
@@ -271,7 +290,7 @@ if config.get("mode") == "brown_field":
             countries=config["countries"],
         input:
             country_shapes="resources/shapes/microgrid_shapes.geojson",
-            offshore_shapes="resources/shapes/offshore_shapes.geojson",
+            offshore_shapes=pypsaearth("resources/shapes/offshore_shapes.geojson"),
             base_network="networks/" + RDIR + "base.nc",
             #gadm_shapes="resources/" + RDIR + "shapes/MAR2.geojson",
             #using this line instead of the following will test updated gadm shapes for MA.
@@ -322,11 +341,13 @@ rule dist_build_renewable_profiles:
         countries=config["countries"],
         alternative_clustering=config["cluster_options"]["alternative_clustering"],
     input:
-        natura="resources/natura.tiff",
-        copernicus="data/copernicus/PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif",
-        gebco="data/gebco/GEBCO_2025_sub_ice.nc",
+        natura=pypsaearth("resources/natura.tiff"),
+        copernicus=pypsaearth(
+            "data/copernicus/PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif"
+        ),
+        gebco=pypsaearth("data/gebco/GEBCO_2025_sub_ice.nc"),
         country_shapes="resources/shapes/microgrid_shapes.geojson",
-        offshore_shapes="resources/shapes/offshore_shapes.geojson",
+        offshore_shapes=pypsaearth("resources/shapes/offshore_shapes.geojson"),
         hydro_capacities="pypsa-earth/data/hydro_capacities.csv",
         eia_hydro_generation="pypsa-earth/data/eia_hydro_annual_generation.csv",
         powerplants="resources/powerplants.csv",
@@ -341,7 +362,9 @@ rule dist_build_renewable_profiles:
             if config.get("mode") == "brown_field"
             else "resources/shapes/microgrid_bus_shapes.geojson"
         ),
-        cutout=lambda w: "cutouts/" + config["renewable"][w.technology]["cutout"] + ".nc",
+        cutout=lambda w: pypsaearth(
+            "cutouts/" + config["renewable"][w.technology]["cutout"] + ".nc"
+        ),
     output:
         profile="resources/renewable_profiles/profile_{technology}.nc",
     log:
@@ -416,75 +439,75 @@ rule dist_solve_network:
     script:
         "../scripts/dist_solve_network.py"
 
-if config["enable"].get("retrieve_databundle", True):
+#if config["enable"].get("retrieve_databundle", True):
 
-    bundles_to_download = get_best_bundles_in_snakemake(config)
+#    bundles_to_download = get_best_bundles_in_snakemake(config)
 
-    rule retrieve_databundle_light:
-        params:
-            bundles_to_download=bundles_to_download,
-            hydrobasins_level=config["renewable"]["hydro"]["hydrobasins_level"],
-        output:  #expand(directory('{file}') if isdir('{file}') else '{file}', file=datafiles)
-            expand(
-                "{file}", file=datafiles_retrivedatabundle(config, bundles_to_download)
-            ),
-            directory("data/landcover"),
-        log:
-            "logs/" + RDIR + "retrieve_databundle.log",
-        benchmark:
-            "benchmarks/" + RDIR + "retrieve_databundle_light"
-        script:
-            "../pypsa-earth/scripts/retrieve_databundle_light.py"
+#    rule retrieve_databundle_light:
+#        params:
+#            bundles_to_download=bundles_to_download,
+#            hydrobasins_level=config["renewable"]["hydro"]["hydrobasins_level"],
+#        output:  #expand(directory('{file}') if isdir('{file}') else '{file}', file=datafiles)
+#            expand(
+#                "{file}", file=datafiles_retrivedatabundle(config, bundles_to_download)
+#            ),
+#            directory("data/landcover"),
+#        log:
+#            "logs/" + RDIR + "retrieve_databundle.log",
+#        benchmark:
+#            "benchmarks/" + RDIR + "retrieve_databundle_light"
+#        script:
+#            "../pypsa-earth/scripts/retrieve_databundle_light.py"
 
-rule build_shapes:
-    params:
-        build_shape_options=config["build_shape_options"],
-        crs=config["crs"],
-        countries=config["countries"],
-        subregion=config["subregion"],
-    input:
-        # naturalearth='data/bundle/naturalearth/ne_10m_admin_0_countries.shp',
-        # eez='data/bundle/eez/World_EEZ_v8_2014.shp',
-        # nuts3='data/bundle/NUTS_2013_60M_SH/data/NUTS_RG_60M_2013.shp',
-        # nuts3pop='data/bundle/nama_10r_3popgdp.tsv.gz',
-        # nuts3gdp='data/bundle/nama_10r_3gdp.tsv.gz',
-        eez="data/eez/eez_v11.gpkg",
-    output:
-        country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
-        offshore_shapes="resources/" + RDIR + "shapes/offshore_shapes.geojson",
-        africa_shape="resources/" + RDIR + "shapes/africa_shape.geojson",
-        gadm_shapes="resources/" + RDIR + "shapes/gadm_shapes.geojson",
-        subregion_shapes="resources/" + RDIR + "shapes/subregion_shapes.geojson",
-    log:
-        "logs/" + RDIR + "build_shapes.log",
-    benchmark:
-        "benchmarks/" + RDIR + "build_shapes"
-    threads: 1
-    resources:
-        mem_mb=3096,
-    script:
-        "scripts/build_shapes.py"
+#rule build_shapes:
+#    params:
+#        build_shape_options=config["build_shape_options"],
+#        crs=config["crs"],
+#        countries=config["countries"],
+#        subregion=config["subregion"],
+#    input:
+#        # naturalearth='data/bundle/naturalearth/ne_10m_admin_0_countries.shp',
+#        # eez='data/bundle/eez/World_EEZ_v8_2014.shp',
+#        # nuts3='data/bundle/NUTS_2013_60M_SH/data/NUTS_RG_60M_2013.shp',
+#        # nuts3pop='data/bundle/nama_10r_3popgdp.tsv.gz',
+#        # nuts3gdp='data/bundle/nama_10r_3gdp.tsv.gz',
+#        eez="data/eez/eez_v11.gpkg",
+#    output:
+#        country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
+#        offshore_shapes="resources/" + RDIR + "shapes/offshore_shapes.geojson",
+#        africa_shape="resources/" + RDIR + "shapes/africa_shape.geojson",
+#        gadm_shapes="resources/" + RDIR + "shapes/gadm_shapes.geojson",
+#        subregion_shapes="resources/" + RDIR + "shapes/subregion_shapes.geojson",
+#    log:
+#        "logs/" + RDIR + "build_shapes.log",
+#    benchmark:
+#        "benchmarks/" + RDIR + "build_shapes"
+#    threads: 1
+#    resources:
+#        mem_mb=3096,
+#    script:
+#        "scripts/build_shapes.py"
 
-if config["enable"].get("build_natura_raster", False):
+#if config["enable"].get("build_natura_raster", False):
 
-    rule build_natura_raster:
-        params:
-            area_crs=config["crs"]["area_crs"],
-            natura=config["natura"],
-            disable_progress=not config["enable"]["progress_bar"],
-        input:
-            shapefiles_land="data/landcover",
-            cutouts=expand(
-                "cutouts/" + "{cutout}.nc",
-                cutout=[c["cutout"] for _, c in config["renewable"].items()],
-            ),
-            country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
-            offshore_shapes="resources/" + RDIR + "shapes/offshore_shapes.geojson",
-        output:
-            "resources/" + RDIR + "natura.tiff",
-        log:
-            "logs/" + RDIR + "build_natura_raster.log",
-        benchmark:
-            "benchmarks/" + RDIR + "build_natura_raster"
-        script:
-            "scripts/build_natura_raster.py"
+#    rule build_natura_raster:
+#        params:
+#            area_crs=config["crs"]["area_crs"],
+#            natura=config["natura"],
+#            disable_progress=not config["enable"]["progress_bar"],
+#        input:
+#            shapefiles_land="data/landcover",
+#            cutouts=expand(
+#                "cutouts/" + "{cutout}.nc",
+#                cutout=[c["cutout"] for _, c in config["renewable"].items()],
+#            ),
+#            country_shapes="resources/" + RDIR + "shapes/country_shapes.geojson",
+#            offshore_shapes="resources/" + RDIR + "shapes/offshore_shapes.geojson",
+#        output:
+#            "resources/" + RDIR + "natura.tiff",
+#        log:
+#            "logs/" + RDIR + "build_natura_raster.log",
+#        benchmark:
+#            "benchmarks/" + RDIR + "build_natura_raster"
+#        script:
+#            "scripts/build_natura_raster.py"
