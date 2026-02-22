@@ -281,7 +281,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=500,
         script:
-            "../scripts/base_network.py"
+            pypsaearth("scripts/base_network.py")
 
     rule dist_build_bus_regions:
         params:
@@ -375,7 +375,7 @@ rule dist_build_renewable_profiles:
     resources:
         mem_mb=ATLITE_NPROCESSES * 5000,
     script:
-        "../pypsa-earth/scripts/build_renewable_profiles.py"
+        pypsaearth("scripts/build_renewable_profiles.py")
 
 
 rule dist_add_electricity:
