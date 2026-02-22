@@ -1,0 +1,413 @@
+# SPDX-FileCopyrightText: : 2021 The PyPSA-Earth Authors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version: 0.0.2
+tutorial: true
+mode: green_field  # brown_field or green_field
+
+logging:
+  level: INFO
+  format: "%(levelname)s:%(name)s:%(message)s"
+
+# option to disable the subworkflow to ease the analyses
+disable_subworkflow: false
+
+enable:
+  # prepare_links_p_nom: false
+  retrieve_databundle: true
+  retrieve_cost_data: true
+  download_osm_data: true
+  download_osm_buildings: true
+  download_osm_method: overpass # or earth_osm
+  download_and_merge_microsoft_ML_building: true # Select true only if download osm_method is overpass, if True, then retrieve_and_merge_microsoft_ML_building can be run
+  # If "build_cutout" : true # requires cds API key
+  # https://cds.climate.copernicus.eu/api-how-to
+  # More information
+  # https://atlite.readthedocs.io/en/latest/introduction.html#datasets
+  build_cutout: false
+  progress_bar: true # show progress bar during downloading routines and other long-running tasks
+  build_natura_raster: true  # If True, then build_natura_raster can be run
+  interconnect_microgrids: false
+
+scenario:
+  simpl: ['']
+  ll: ['copt']
+  clusters: [55]
+  opts: [Co2L-3H]  # Co2L adds an overall absolute carbon-dioxide emissions limit
+                   # 3H resamples the time-resolution by averaging over every 3 snapshots
+
+countries: ["NG"]
+# Can be replaced by country ["NG", "BJ"] or user specific region, more at
+# https://pypsa-earth.readthedocs.io/en/latest/configuration.html#top-level-configuration
+
+year: "2019"  # Year setting allows the choice of which data to download (es. Worldpop_data)
+grid_import_marginal_cost: 50.0  # [EUR/MWh] Marginal cost of importing electricity from the main grid in brownfield mode
+
+snapshots:
+  start: "2013-03-01"
+  end: "2013-03-07"
+  inclusive: "left"  # end is not inclusive
+
+ramp:
+  days: 365  # Days allows to select the number of simulated days to ramp
+
+tier:
+  tier_percent: [0.3, 0.2, 0.2, 0.1, 0.15, 0.05]
+  # Tier allows selection of the percentage breakdown of the population into
+  # the different tiers of energy access. Values range from the percentage of
+  # population belonging to tier 0 to those belonging to tier 5.
+
+house_area_limit:
+  area_limit: 255  # All buildings without a specified tag, having an area less than house_limit will be considered houses
+
+build_demand_type:
+  type: "From_file"
+  std: "on"
+# type allows to select the mode by which the microgrid demand profile is generated.
+# From_file = a predetermined hourly profile is used
+# Ramp = an average hourly profile is calculated by exploiting the ramp tool when std on also the
+#     standard deviation is calculated and used to calculate demand.
+
+# definition of the Coordinate Reference Systems
+crs:
+  geo_crs: EPSG:4326  # general geographic projection, not used for metric measures.
+                      # "EPSG:4326" is the standard used by OSM and google maps
+  distance_crs: EPSG:3857  # projection for distance measurements only. Possible recommended values are "EPSG:3857" (used by OSM and Google Maps)
+  area_crs: ESRI:54009  # projection for area measurements only. Possible recommended values are Global Mollweide "ESRI:54009"
+
+clean_osm_data_options:  # osm = OpenStreetMap
+  names_by_shapes: true  # Set the country name based on the extended country shapes
+  threshold_voltage: 500  # [V] assets below that voltage threshold will not be used (cable, line, generator, etc.)
+  tag_substation: "distribution"  # Filters only substations with 'transmission' tag, ('distribution' also available)
+  add_line_endings: true  # When "True", then line endings are added to the dataset of the substations
+  generator_name_method: OSM  # Methodology to specify the name to the generator. Options: OSM (name as by OSM dataset), closest_city (name by the closest city)
+  use_custom_lines: "OSM_only"  # Use OSM (OSM_only), customized (custom_only), or both data sets (add_custom)
+  path_custom_lines: false  # If exists, provide the specific absolute path of the custom file e.g. (...\data\custom_lines.geojson)
+  use_custom_substations: "OSM_only"  # Use OSM (OSM_only), customized (custom_only), or both data sets (add_custom)
+  path_custom_substations: false  # If exists, provide the specific absolute path of the custom file e.g. (...\data\custom_substations.geojson)
+  use_custom_cables: "OSM_only"  # Use OSM (OSM_only), customized (custom_only), or both data sets (add_custom)
+  path_custom_cables: false  # If exists, provide the specific absolute path of the custom file e.g. (...\data\custom_cables.geojson)
+
+build_osm_network:  # Options of the build_osm_network script; osm = OpenStreetMap
+  group_close_buses: true  # When "True", close buses are merged and guarantee the voltage matching among line endings
+  group_tolerance_buses: 500  # [m] (default 5000) Tolerance in meters of the close buses to merge
+  split_overpassing_lines: true  # When True, lines overpassing buses are splitted and connected to the bueses
+  overpassing_lines_tolerance: 1  # [m] (default 1) Tolerance to identify lines overpassing buses
+  force_ac: false  # When true, it forces all components (lines and substation) to be AC-only. To be used if DC assets create problem.
+
+base_network:
+  min_voltage_substation_offshore: 1000000   # [V] minimum voltage of the offshore substations
+  min_voltage_rebase_voltage: 1000000
+
+electricity:
+  voltages: [0.4, 15., 20., 30., 132., 150., 220., 380., 500., 750.]
+  voltage: 0.22
+  voltage_node_cluster: [15., 20., 30.]  # [kV] Voltage levels to use for building clustering in brown_field mode (greater than 0.4 and less than 132)
+  hvdc_as_lines: false  # should HVDC lines be modeled as `Line` or as `Link` component?
+  line_type: "24-AL1/4-ST1A 0.4"
+
+  max_hours:
+    battery: 6
+    H2: 168
+
+  extendable_carriers:
+    Generator: [solar, onwind, diesel]
+    StorageUnit: ["lithium", "lead acid"]
+  conventional_carriers: [diesel]
+
+  renewable_carriers: [solar, onwind]
+
+lines:
+  ac_types: # TO DO : check value for distribution
+    0.4: "24-AL1/4-ST1A 0.4"
+    15.: "NA2XS2Y 1x185 RM/25 12/20 kV"
+    20.: "NA2XS2Y 1x185 RM/25 12/20 kV"
+    30.: "NA2XS2Y 1x240 RM/25 18/30 kV"
+    132.: "Al/St 240/40 2-bundle 220.0"
+    150.: "Al/St 240/40 2-bundle 220.0"
+    220.: "Al/St 240/40 2-bundle 220.0"
+    380.: "Al/St 240/40 4-bundle 380.0"
+    500.: "Al/St 240/40 4-bundle 500.0"
+    750.: "Al/St 560/50 4-bundle 750.0"
+  dc_types:
+    500.: "HVDC XLPE 1000"
+  s_max_pu: 0.7
+  s_nom_max: .inf
+  length_factor: 1.25
+  under_construction: "zero" # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+
+links:
+  p_max_pu: 1.0
+  p_nom_max: .inf
+  under_construction: "zero" # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity
+
+transformers:
+  x: 0.06      # TO DO : check value for distribution
+  s_nom: 0.63
+  type: ""
+
+
+# TODO: Needs to be adjusted for Africa
+costs:
+  year: 2030
+  discountrate: 0.07  # From a Lion Hirth paper, also reflects average of Noothout et al 2016
+  USD2013_to_EUR2013: 0.7532  # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  marginal_cost:  # EUR/MWh
+    solar: 0.01
+    onwind: 0.015
+    offwind: 0.015
+    hydro: 0.
+    H2: 0.
+    electrolysis: 0.
+    fuel cell: 0.
+    battery: 0.
+    battery inverter: 0.
+  emission_prices:  # in currency per tonne emission, only used with the option Ep
+    co2: 0.
+
+solving:
+  options:
+    formulation: kirchhoff
+    load_shedding: true
+    noisy_costs: true
+    min_iterations: 4
+    max_iterations: 6
+    clip_p_max_pu: 0.01
+    skip_iterations: true
+    track_iterations: false
+    # nhours: 10
+  solver:
+    name: glpk
+
+tech_modelling:
+  general_vre: ["onwind", "solar"]
+  storage_techs: ["lithium", "lead acid"]
+  conv_techs: ["diesel"]
+  load_carriers: ["AC load"]
+
+microgrids_list:  # MICROGRIDS IN NIGERIA
+  microgrid_1:     # WORKING
+    lon_max: 7.3914
+    lon_min: 7.2616
+    lat_min: 4.6151
+    lat_max: 4.7208
+# microgrid_2:     # WORKING
+#   lon_max: 7.6
+#   lon_min: 7.5
+#   lat_min: 4.4
+#   lat_max: 4.5
+# microgrid_3:
+#   lon_max: 9.2
+#   lon_min: 8.6
+#   lat_min: 6.8
+#   lat_max: 7.3
+load:
+  scaling_factor: 15000
+
+buildings:
+  n_clusters: 10 # either specify a number (n_clusters: 10) or specify the number of clusters by microgrid as in the following
+#   microgrid_1: 3
+#   microgrid_2: 13
+
+atlite:
+  nprocesses: 4
+  cutouts:
+    cutout-2013-era5-tutorial:
+      module: era5
+      dx: 0.3 # cutout resolution
+      dy: 0.3 # cutout resolution
+      # The cutout time is automatically set by the snapshot range. See `snapshot:` option above and 'build_cutout.py'.
+      # time: ["2013-01-01", "2014-01-01"]  # to manually specify a different weather year (~70 years available)
+      # The cutout spatial extent [x,y] is automatically set by country selection. See `countires:` option above and 'build_cutout.py'.
+      # x: [-12., 35.]  # set cutout range manual, instead of automatic by boundaries of country
+      # y: [33., 72]    # manual set cutout range
+
+renewable:
+  onwind:
+    cutout: cutout-2013-era5-tutorial
+    resource:
+      method: wind
+      turbine: Vestas_V112_3MW
+    capacity_per_sqkm: 3 # conservative, ScholzPhd Tab 4.3.1: 10MW/km^2
+    # correction_factor: 0.93
+    copernicus:
+      # Scholz, Y. (2012). Renewable energy based electricity supply at low costs:
+      #  development of the REMix model and application for Europe. ( p.42 / p.28)
+      # CLC grid codes:
+      # 11X/12X - Various forest types
+      # 20  - Shrubs
+      # 30  - Herbaceus vegetation
+      # 40  - Cropland
+      # 50  - Urban
+      # 60  - Bare / Sparse vegetation
+      # 80  - Permanent water bodies
+      # 100 - Moss and lichen
+      # 200 - Open sea
+      grid_codes: [20, 30, 40, 60, 100, 111, 112, 113, 114, 115, 116, 121, 122, 123, 124, 125, 126]
+      distance: 1000
+      distance_grid_codes: [50]
+    natura: true
+    potential: simple # or conservative
+    clip_p_max_pu: 1.e-2
+    extendable: true
+  offwind-ac:
+    cutout: cutout-2013-era5-tutorial
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_5MW_offshore
+    capacity_per_sqkm: 2
+    # correction_factor: 0.8855
+    # proxy for wake losses
+    # from 10.1016/j.energy.2018.08.153
+    # until done more rigorously in #153
+    copernicus:
+      grid_codes: [80, 200]
+    natura: true
+    max_depth: 50
+    max_shore_distance: 30000
+    potential: simple # or conservative
+    clip_p_max_pu: 1.e-2
+    extendable: true
+  offwind-dc:
+    cutout: cutout-2013-era5-tutorial
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_5MW_offshore
+    # ScholzPhd Tab 4.3.1: 10MW/km^2
+    capacity_per_sqkm: 3
+    # correction_factor: 0.8855
+    # proxy for wake losses
+    # from 10.1016/j.energy.2018.08.153
+    # until done more rigorously in #153
+    copernicus:
+      grid_codes: [80, 200]
+    natura: true
+    max_depth: 50
+    min_shore_distance: 30000
+    potential: simple # or conservative
+    clip_p_max_pu: 1.e-2
+    extendable: true
+  solar:
+    cutout: cutout-2013-era5-tutorial
+    resource:
+      method: pv
+      panel: CSi
+      orientation: latitude_optimal # will lead into optimal design
+      # slope: 0.  # slope: 0 represent a flat panel
+      # azimuth: 180.  # azimuth: 180 south orientation
+    capacity_per_sqkm: 4.6 # From 1.7 to 4.6 addresses issue #361
+    # Determined by comparing uncorrected area-weighted full-load hours to those
+    # published in Supplementary Data to
+    # Pietzcker, Robert Carl, et al. "Using the sun to decarbonize the power
+    # sector: The economic potential of photovoltaics and concentrating solar
+    # power." Applied Energy 135 (2014): 704-720.
+    correction_factor: 0.854337
+    copernicus:
+      grid_codes: [20, 30, 40, 50, 60, 90, 100]
+    natura: true
+    potential: simple # or conservative
+    clip_p_max_pu: 1.e-2
+    extendable: true
+  hydro:
+    cutout: cutout-2013-era5-tutorial
+    hydrobasins_level: 6
+    resource:
+      method: hydro
+      hydrobasins: data/hydrobasins/hybas_world.shp
+      flowspeed: 1.0 # m/s
+      # weight_with_height: false
+      # show_progress: true
+    carriers: [ror, PHS, hydro]
+    PHS_max_hours: 6
+    hydro_max_hours: "energy_capacity_totals_by_country" # not active
+    hydro_max_hours_default: 6.0 # (optional, default 6) Default value of max_hours for hydro when NaN values are found
+    clip_min_inflow: 1.0
+    extendable: true
+    normalization:
+      method: eia # 'hydro_capacities' to rescale country hydro production by using hydro_capacities, 'eia' to rescale by eia data, false for no rescaling
+      year: 2013 # (optional) year of statistics used to rescale the runoff time series. When not provided, the cutout weather year is used
+    multiplier: 1.1 # multiplier applied after the normalization of the hydro production; default 1.0
+  csp:
+    cutout: cutout-2013-era5-tutorial
+    resource:
+      method: csp
+      installation: SAM_solar_tower
+    capacity_per_sqkm: 2.392 # From 1.7 to 4.6 addresses issue #361
+    # Determined by comparing uncorrected area-weighted full-load hours to those
+    # published in Supplementary Data to
+    # Pietzcker, Robert Carl, et al. "Using the sun to decarbonize the power
+    # sector: The economic potential of photovoltaics and concentrating solar
+    # power." Applied Energy 135 (2014): 704-720.
+    copernicus:
+      grid_codes: [20, 30, 40, 60, 90]
+      distancing_codes: [50]
+      distance_to_codes: 3000
+    natura: true
+    potential: simple # or conservative
+    clip_p_max_pu: 1.e-2
+    extendable: true
+    csp_model: advanced # simple or advanced
+
+cluster_options:
+  simplify_network:
+    to_substations: false # network is simplified to nodes with positive or negative power injection (i.e. substations or offwind connections)
+    algorithm: kmeans # choose from: [hac, kmeans]
+    feature: solar+onwind-time # only for hac. choose from: [solar+onwind-time, solar+onwind-cap, solar-time, solar-cap, solar+offwind-cap] etc.
+    exclude_carriers: []
+    remove_stubs: true
+    remove_stubs_across_borders: false
+    p_threshold_drop_isolated: 20 # [MW] isolated (sub)networks or nodes are being discarded if total mean power is below the specified threshold
+    p_threshold_merge_isolated: 300 # [MW] isolated (sub)networks or nodes are being merged into a single isolated bus if total mean power is below the specified threshold
+    s_threshold_fetch_isolated: false # [-] a share of the national load for merging an isolated network into a backbone network
+  cluster_network:
+    algorithm: kmeans
+    feature: solar+onwind-time
+    exclude_carriers: []
+  alternative_clustering: false # "False" use Voronoi shapes, "True" use GADM shapes
+  distribute_cluster: ["load"] # Distributes cluster nodes per country according to ['load'],['pop'] or ['gdp']
+  out_logging: true # When "True", logging is printed to console
+  aggregation_strategies:
+    generators: # use "min" for more conservative assumptions
+      p_nom: sum
+      p_nom_max: sum
+      p_nom_min: sum
+      p_min_pu: mean
+      p_max_pu: weighted_average
+      marginal_cost: mean
+      committable: any
+      ramp_limit_up: max
+      ramp_limit_down: max
+      efficiency: mean
+  focus_weights: false # When a value specified, set the share of nodes allocated to each country
+    # country: share
+
+build_shape_options:
+  gadm_layer_id: 1 # GADM level area used for the gadm_shapes. Codes are country-dependent but roughly: 0: country, 1: region/county-like, 2: municipality-like
+  simplify_tolerance: 0.01 # Default value is 0.01, higher the value more is the simplification of the GADM shapes
+  simplify_gadm: true # When true, shape polygons are simplified else no
+  minarea: 0.01 # Minimum area of polygons to be retained in GADM shapes after simplification, in square degrees. Polygons with area smaller than this value will be removed
+  update_file: false # When true, all the input files are downloaded again and replace the existing files
+  out_logging: true # When true, logging is printed to console
+  year: 2020 # reference year used to derive shapes, info on population and info on GDP
+  nprocesses: 3 # number of processes to be used in build_shapes
+  worldpop_method: "standard" # "standard" pulls from web 1kmx1km raster, "api" pulls from API 100mx100m raster,
+  # false (not "false") no pop addition to shape which is useful when generating only cutout
+  gdp_method: "standard" # "standard" pulls from web 1x1km raster, false (not "false") no gdp addition to shape which useful when generating only cutout
+  contended_flag: "set_by_country" # "set_by_country" assigns the contended areas to the countries according to the GADM database, "drop" drops these contended areas from the model
+
+subregion:
+  enable:
+    simplify_network: true # activate subregion in simplify_network
+    cluster_network: false # activate subregion in cluster_network
+  define_by_gadm: false # name of the subregion. Multiple countries can be part in the same subregion.
+  path_custom_shapes: false # (optional) provide the specific absolute path of the custom file e.g. (...\data\custom_shapes.geojson)
+  tolerance: 100 # Buffer distance (in km) for assigning a country/subregion shape to a bus (the default tolerance is 100 km)
+
+natura: # only relevant when using build_natura_raster: true
+  natura_size: countries # countries, cutout, or global. Select which regions to include in the natura raster.
+  natura_resolution: 100 # [m] Grid resolution of the natura data.
+  window_size: 10000 # [bytes] Size of the shifting rasterization window. The required RAM scales with window_size^2.
+  buffer_size: 10000 # [unit of area_crs, default: m] Buffer around the regions of interest to include every required value. A buffer of around 100 km will be sufficient for most cases.
+
+
