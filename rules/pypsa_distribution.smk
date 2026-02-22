@@ -23,7 +23,7 @@ if config.get("disable_subworkflow", False):
 
 
 COSTS = "data/costs.csv"
-PROFILE = "data/dist_data/sample_profile.csv"
+PROFILE = "data/sample_profile.csv"
 configfile: "config.pypsa-earth.yaml"
 configfile: "pypsa-earth/configs/bundle_config.yaml"
 
@@ -375,7 +375,7 @@ rule dist_build_renewable_profiles:
     resources:
         mem_mb=ATLITE_NPROCESSES * 5000,
     script:
-        "../scripts/build_renewable_profiles.py"
+        "../pypsa-earth/scripts/build_renewable_profiles.py"
 
 
 rule dist_add_electricity:
