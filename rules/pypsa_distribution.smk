@@ -187,7 +187,7 @@ if config.get("mode") == "brown_field":
             substations="resources/" + RDIR + "osm/raw/all_raw_substations.geojson",
             country_shapes="resources/shapes/microgrid_shapes.geojson",
             offshore_shapes=pypsaearth("resources/shapes/offshore_shapes.geojson"),
-            africa_shape="../resources/shapes/africa_shape.geojson",
+            africa_shape=pypsaearth("resources/shapes/africa_shape.geojson"),
         output:
             generators="resources/" + RDIR + "osm/clean/all_clean_generators.geojson",
             generators_csv="resources/" + RDIR + "osm/clean/all_clean_generators.csv",
@@ -198,7 +198,7 @@ if config.get("mode") == "brown_field":
         benchmark:
             "benchmarks/" + RDIR + "clean_osm_data"
         script:
-            "../scripts/clean_osm_data.py"
+            pypsaearth("scripts/clean_osm_data.py")
 
     rule dist_build_osm_network:
         params:
@@ -296,7 +296,7 @@ if config.get("mode") == "brown_field":
             #using this line instead of the following will test updated gadm shapes for MA.
             #To use: downlaod file from the google drive and place it in resources/" + RDIR + "shapes/
             #Link: https://drive.google.com/drive/u/1/folders/1dkW1wKBWvSY4i-XEuQFFBj242p0VdUlM
-            gadm_shapes="../resources/" + RDIR + "shapes/gadm_shapes.geojson",
+            gadm_shapes=pypsaearth("resources/" + RDIR + "shapes/gadm_shapes.geojson"),
         output:
             regions_onshore="resources/" + RDIR + "bus_regions/regions_onshore.geojson",
             regions_offshore="resources/"
@@ -310,7 +310,7 @@ if config.get("mode") == "brown_field":
         resources:
             mem_mb=1000,
         script:
-            "../scripts/build_bus_regions.py"
+            pypsaearth("scripts/build_bus_regions.py")
 
     rule dist_filter_data:
         input:
