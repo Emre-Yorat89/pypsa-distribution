@@ -72,9 +72,7 @@ jobs:
     - name: Test workflow
       run: |
         rm -rf config.yaml
-        cp -rf test/config.distribution.test.yaml config.distribution.yaml
-        cp -rf test/config.tutorial_full.yaml config.pypsa-earth.yaml
-        snakemake --cores all solve_network --forceall
+        snakemake --cores all dist_solve_network --configfile configs/config.distribution.yaml --forceall
 
     - name: Test workflow brown field
       run: |
