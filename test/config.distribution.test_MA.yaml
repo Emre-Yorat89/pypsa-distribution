@@ -187,11 +187,11 @@ tech_modelling:
   load_carriers: ["AC load"]
 
 microgrids_list:  # MICROGRIDS IN NIGERIA
-  microgrid_1:     # WORKING
-    lon_max: 7.3914
-    lon_min: 7.2616
-    lat_min: 4.6151
-    lat_max: 4.7208
+  microgrid_1:
+    lon_max: -2.2247
+    lon_min: -2.5399
+    lat_min: 34.9490
+    lat_max: 35.1918
 # microgrid_2:     # WORKING
 #   lon_max: 7.6
 #   lon_min: 7.5
